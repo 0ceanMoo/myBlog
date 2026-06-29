@@ -1,0 +1,62 @@
+name: Publish to Qiita
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'articles/**'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Qiita CLI
+        run: npm install -g @qiita/qiita-cli
+
+      - name: Copy articles to public
+        run: |
+          mkdir -p public
+          cp articles/*.md public/
+
+      - name: Publish to Qiita
+        run: qiita publish --all
+        env:
+          QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
+
+      - name: Sync Qiita IDs back to articles
+        run: |
+          python3 - <<'EOF'
+          import os, re
+
+          def sync(pub, art):
+              with open(pub) as f: pub_content = f.read()
+              with open(art) as f: art_content = f.read()
+              for field in ['id', 'updated_at']:
+                  m = re.search(rf'^{field}:(.*)$', pub_content, re.MULTILINE)
+                  if m:
+                      art_content = re.sub(rf'^{field}:.*$', f'{field}:{m.group(1)}', art_content, flags=re.MULTILINE)
+              with open(art, 'w') as f: f.write(art_content)
+              print(f'Synced: {os.path.basename(art)}')
+
+          for fn in os.listdir('public'):
+              if fn.endswith('.md') and os.path.exists(f'articles/{fn}'):
+                  sync(f'public/{fn}', f'articles/{fn}')
+          EOF
+
+      - name: Commit updated IDs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add articles/
+          git diff --staged --quiet || git commit -m "chore: sync Qiita article IDs [skip ci]"
+          git push
