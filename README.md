@@ -43,13 +43,26 @@ myBlog/
 
 ---
 
+## ブランチ運用方針
+
+| ブランチ | 役割 |
+|---------|------|
+| `develop` | 執筆・編集作業用 |
+| `main` | 公開済み記事の管理。マージ＝公開のトリガー |
+
+`develop` で作業 → `main` にPR → マージしたタイミングでZenn・Qiitaに同時公開される。
+
+---
+
 ## 記事を書く流れ
 
 ```
-1. drafts/記事名/ で素材を集め・ラフを書く（Claude活用）
-2. articles/記事名.md に正式記事を書く（Obsidianで編集・スクショ挿入）
-3. GitHub に push
-4. Zenn に自動同期・Qiita に自動投稿
+1. develop ブランチで作業
+2. drafts/記事名/ で素材を集め・ラフを書く（Claude活用）
+3. articles/記事名.md に正式記事を書く（Obsidianで編集・スクショ挿入）
+4. GitHub に push（develop）
+5. main に PR を作成してマージ
+6. Zenn に自動同期・Qiita に自動投稿
 ```
 
 ---
@@ -98,3 +111,33 @@ myBlog/
    ```
 4. GitHub Actions に Qiita 自動投稿ワークフローを追加
 5. GitHubにリポジトリを作成してpush
+
+---
+
+## 2台目以降のMacでのセットアップ
+
+リポジトリはすでにGitHubにあるので、cloneから始める。
+
+```bash
+git clone https://github.com/0ceanMoo/myBlog.git
+cd myBlog
+```
+
+### Zenn CLI の復元
+
+```bash
+npm install
+```
+
+`package.json` から依存関係が復元されるだけなので `npm init` や `npx zenn init` は不要。
+
+### Qiita CLI のセットアップ
+
+Qiitaのトークンはマシンごとにローカル保存されるため、新しいMacでは再度ログインが必要。
+
+```bash
+npm install -g @qiita/qiita-cli
+qiita login
+```
+
+ブラウザが開くので、スコープ `read_qiita`・`write_qiita` を選択してトークンを発行・入力する。
