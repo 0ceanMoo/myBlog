@@ -44,9 +44,15 @@ jobs:
               with open(f'articles/{fn}') as f:
                   content = f.read()
 
-              # IDをフロントマター先頭に注入
+              # Qiita必須フィールドをフロントマター先頭に注入
               qiita_id = mapping.get(slug, 'null')
-              content = re.sub(r'^(---\n)', rf'\1id: {qiita_id}\n', content, count=1)
+              qiita_fields = (
+                  f"id: {qiita_id}\n"
+                  f"updated_at: ''\n"
+                  f"organization_url_name: null\n"
+                  f"slide: false\n"
+              )
+              content = re.sub(r'^(---\n)', rf'\1{qiita_fields}', content, count=1)
 
               # 画像URLをGitHub raw URLに置換
               content = content.replace('](/images/', f']({GITHUB_RAW_BASE}/images/')
