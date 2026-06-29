@@ -8,11 +8,6 @@ published: false
 tags:
   - テスト
 private: true
-updated_at: '2026-06-29T21:28:55+09:00'
-id: 3f3b770e00b87c88645b
-organization_url_name: null
-slide: false
-ignorePublish: false
 ---
 
 ## これはテスト記事です

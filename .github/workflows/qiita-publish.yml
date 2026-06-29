@@ -23,40 +23,76 @@ jobs:
       - name: Install Qiita CLI
         run: npm install -g @qiita/qiita-cli
 
-      - name: Copy articles to public
+      - name: Prepare articles for Qiita
         run: |
-          mkdir -p public
-          cp articles/*.md public/
+          python3 - <<'EOF'
+          import os, re, json
+
+          GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/0ceanMoo/myBlog/main'
+
+          mapping = {}
+          if os.path.exists('.qiita-mapping.json'):
+              with open('.qiita-mapping.json') as f:
+                  mapping = json.load(f)
+
+          os.makedirs('public', exist_ok=True)
+
+          for fn in os.listdir('articles'):
+              if not fn.endswith('.md'):
+                  continue
+              slug = fn[:-3]
+              with open(f'articles/{fn}') as f:
+                  content = f.read()
+
+              # IDをフロントマター先頭に注入
+              qiita_id = mapping.get(slug, 'null')
+              content = re.sub(r'^(---\n)', rf'\1id: {qiita_id}\n', content, count=1)
+
+              # 画像URLをGitHub raw URLに置換
+              content = content.replace('](/images/', f']({GITHUB_RAW_BASE}/images/')
+
+              with open(f'public/{fn}', 'w') as f:
+                  f.write(content)
+
+          print('Done preparing articles')
+          EOF
 
       - name: Publish to Qiita
         run: qiita publish --all
         env:
           QIITA_TOKEN: ${{ secrets.QIITA_TOKEN }}
 
-      - name: Sync Qiita IDs back to articles
+      - name: Update Qiita ID mapping
         run: |
           python3 - <<'EOF'
-          import os, re
+          import os, re, json
 
-          def sync(pub, art):
-              with open(pub) as f: pub_content = f.read()
-              with open(art) as f: art_content = f.read()
-              for field in ['id', 'updated_at']:
-                  m = re.search(rf'^{field}:(.*)$', pub_content, re.MULTILINE)
-                  if m:
-                      art_content = re.sub(rf'^{field}:.*$', f'{field}:{m.group(1)}', art_content, flags=re.MULTILINE)
-              with open(art, 'w') as f: f.write(art_content)
-              print(f'Synced: {os.path.basename(art)}')
+          mapping = {}
+          if os.path.exists('.qiita-mapping.json'):
+              with open('.qiita-mapping.json') as f:
+                  mapping = json.load(f)
 
           for fn in os.listdir('public'):
-              if fn.endswith('.md') and os.path.exists(f'articles/{fn}'):
-                  sync(f'public/{fn}', f'articles/{fn}')
+              if not fn.endswith('.md'):
+                  continue
+              slug = fn[:-3]
+              with open(f'public/{fn}') as f:
+                  content = f.read()
+              m = re.search(r'^id:\s*(\S+)', content, re.MULTILINE)
+              if m:
+                  qiita_id = m.group(1).strip()
+                  if qiita_id and qiita_id != 'null':
+                      mapping[slug] = qiita_id
+                      print(f'Mapped: {slug} -> {qiita_id}')
+
+          with open('.qiita-mapping.json', 'w') as f:
+              json.dump(mapping, f, indent=2, ensure_ascii=False)
           EOF
 
-      - name: Commit updated IDs
+      - name: Commit updated mapping
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add articles/
-          git diff --staged --quiet || git commit -m "chore: sync Qiita article IDs [skip ci]"
+          git add .qiita-mapping.json
+          git diff --staged --quiet || git commit -m "chore: update Qiita ID mapping [skip ci]"
           git push
