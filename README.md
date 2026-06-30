@@ -13,7 +13,7 @@
 
 ```
 myBlog/
-├── drafts/                      ← 素材・ラフ・情報集め（非公開）
+├── scratch/                     ← 素材・ラフ・情報集め（非公開）
 │   └── 記事名/
 │       ├── material.md          ← 素材メモ・情報整理
 │       └── images/              ← 作業中のスクショなど
@@ -32,7 +32,7 @@ myBlog/
 └── package.json                 ← Zenn CLI設定
 ```
 
-### `drafts/` の役割
+### `scratch/` の役割
 
 - 素材集め・ラフ・メモ・スクリーンショット置き場
 - 公開しない。Zenn / Qiita には関係ない
@@ -67,13 +67,25 @@ myBlog/
 
 ```
 1. mainから作業ブランチを切る
-2. drafts/記事名/ で素材を集め・ラフを書く（Claude活用）
+2. scratch/記事名/ で素材を集め・ラフを書く（Claude活用）
 3. articles/記事名.md に正式記事を書く（Obsidianで編集・スクショ挿入）
 4. images/ に画像を置く（必要な場合）
 5. GitHubにpush（作業ブランチ）
 6. mainにPRを作成してマージ
 7. Zennに自動同期・Qiitaに自動投稿
 ```
+
+### 新規記事の場合：マージ後に git pull が必要
+
+新規記事を初めてQiitaに投稿すると、GitHub ActionsがQiita記事IDを `.qiita-mapping.json` に書き込んでmainにcommitする。このcommitをローカルに取り込まないと次回pushでブランチが diverge する。
+
+Actionsの完了後（1〜2分）に以下を実行する。
+
+```bash
+git pull
+```
+
+**既存記事の更新**の場合はIDがすでにmappingに存在するためActionsはcommitしない。`git pull` は不要。
 
 ---
 
