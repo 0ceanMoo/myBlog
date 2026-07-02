@@ -54,6 +54,10 @@ jobs:
               )
               content = re.sub(r'^(---\n)', rf'\1{qiita_fields}', content, count=1)
 
+              # Zenn記法 → Qiita記法の変換
+              content = content.replace(':::message alert', ':::note warn')
+              content = content.replace(':::message', ':::note')
+
               # 画像URLをGitHub raw URLに置換
               content = content.replace('](/images/', f']({GITHUB_RAW_BASE}/images/')
 
