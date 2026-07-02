@@ -8,7 +8,7 @@ topics:
   - rdp
   - raspberrypi
   - windows
-published: false
+published: true
 tags:
   - Tailscale
   - WakeOnLAN

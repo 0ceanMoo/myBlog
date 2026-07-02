@@ -89,6 +89,26 @@ git pull
 
 ---
 
+## ローカルプレビュー
+
+### Zenn
+
+```bash
+npx zenn preview
+```
+
+ブラウザで `http://localhost:8000` が開く。`/images/` の画像もそのまま表示される。
+
+### Qiita
+
+```bash
+qiita preview
+```
+
+ブラウザで `http://localhost:8888` が開く。ただし画像はpush後にGitHub raw URLへ変換されるため、push前はローカルでは表示されない。
+
+---
+
 ## フロントマターの書き方
 
 記事ファイルの先頭に以下の形式で書く。ZennとQiitaのフィールドを1ファイルに共存させる。
